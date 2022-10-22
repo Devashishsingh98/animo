@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body style="margin:0;">
+    <h1>CRUD Implimentation</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>E-mail</th>
+        </tr>
+        {% for user in users %}
+        <tr>
+            <td>{{user.id}}</td>
+            <td>{{user.username}}</td>
+            <td>{{user.email}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <h2>For Addition of an item please enter detail below</h2>
+    <form action="/users" method="post">
+        <input type="text" placeholder="username" name="username">
+        <input type="text" placeholder="email" name="email">
+        <input type="submit">
+    </form>
+    <h2>For deletion of an item please enter id</h2>
+    <form action="/delete" method="POST">
+        <input type="text" name="name" placeholder="Item to delete">
+        <input type="submit">
+    </form>
+</body>
+
+</html>

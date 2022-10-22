@@ -1,10 +1,11 @@
-from flask import Flask, request, render_template, redirect, session
+from flask import Flask, request, render_template, redirect, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 """" CREATING APP AND DATABASE"""
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///project.db"
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 # ______________________________________________________________________________________
 
@@ -16,27 +17,23 @@ class User(db.Model):
     username = db.Column(db.String, unique=True, nullable=False)
     email = db.Column(db.String)
 
-    def __init__(self, name, email):
-        self.name = name
-        self.email = email
+
 # _________________________________________________________________________________________
+""" Display All Users in list"""
 
 
-""" LIST OF USERS """
+@app.route('/')
+def index():
+    users = User.query.all()
+    return render_template('index.html', users=users)
 
 
-@app.route("/users")
-def user_list():
-    users = db.session.execute(
-        db.select(User).order_by(User.username)).scalars()
-    return render_template("user/list.html")
 # ___________________________________________________________________________________________
-
 
 """ CREATE USERS """
 
 
-@app.route("/users/create", methods=["GET", "POST"])
+@app.route("/users", methods=["GET", "POST"])
 def user_create():
     if request.method == "POST":
         user = User(
@@ -45,35 +42,20 @@ def user_create():
         )
         db.session.add(user)
         db.session.commit()
-        return redirect(url_for("user_detail", id=user.id))
-
-    return render_template("user/create.html")
-# _____________________________________________________________________________________________
-
-
-"""GET USERS DETAIL"""
-
-
-@app.route("/user/<int:id>")
-def user_detail(id):
-    user = db.get_or_404(User, id)
-    return render_template("user/detail.html", user=user)
+        return redirect("/")
 # _____________________________________________________________________________________________
 
 
 """ DELETE USERS ID"""
 
 
-@app.route("/user/<int:id>/delete", methods=["GET", "POST"])
-def user_delete(id):
-    user = db.get_or_404(User, id)
-
+@app.route("/delete", methods=["GET", "POST"])
+def user_delete():
     if request.method == "POST":
+        user = User.query.get(request.form["name"])
         db.session.delete(user)
         db.session.commit()
-        return redirect(url_for("user_list"))
-
-    return render_template("user/delete.html", user=user)
+        return redirect("/")
 # _____________________________________________________________________________________________
 
 
