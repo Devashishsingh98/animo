@@ -4,7 +4,6 @@ db = SQLAlchemy()
 
 
 class EmployeeModel(db.Model):
-    __tablename__ = "table"
 
     id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(db.Integer(), unique=True)
