@@ -1,66 +1,81 @@
-from flask import Flask, request, render_template, redirect, session, url_for
-from flask_sqlalchemy import SQLAlchemy
-
-"""" CREATING APP AND DATABASE"""
+from flask import Flask, render_template, request, redirect
+from models import db, EmployeeModel
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-# ______________________________________________________________________________________
-
-"""DATABASE INITIATION"""
+db.init_app(app)
 
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True, nullable=False)
-    email = db.Column(db.String)
+@app.before_first_request
+def create_table():
+    db.create_all()
 
 
-# _________________________________________________________________________________________
-""" Display All Users in list"""
+@app.route('/data/create', methods=['GET', 'POST'])
+def create():
+    if request.method == 'GET':
+        return render_template('createpage.html')
 
-
-@app.route('/')
-def index():
-    users = User.query.all()
-    return render_template('index.html', users=users)
-
-
-# ___________________________________________________________________________________________
-
-""" CREATE USERS """
-
-
-@app.route("/users", methods=["GET", "POST"])
-def user_create():
-    if request.method == "POST":
-        user = User(
-            username=request.form["username"],
-            email=request.form["email"],
-        )
-        db.session.add(user)
+    if request.method == 'POST':
+        employee_id = request.form['employee_id']
+        name = request.form['name']
+        age = request.form['age']
+        position = request.form['position']
+        employee = EmployeeModel(
+            employee_id=employee_id, name=name, age=age, position=position)
+        db.session.add(employee)
         db.session.commit()
-        return redirect("/")
-# _____________________________________________________________________________________________
+        return redirect('/data')
 
 
-""" DELETE USERS ID"""
+@app.route('/data')
+def RetrieveList():
+    employees = EmployeeModel.query.all()
+    return render_template('datalist.html', employees=employees)
 
 
-@app.route("/delete", methods=["GET", "POST"])
-def user_delete():
-    if request.method == "POST":
-        user = User.query.get(request.form["name"])
-        db.session.delete(user)
-        db.session.commit()
-        return redirect("/")
-# _____________________________________________________________________________________________
+@app.route('/data/<int:id>')
+def RetrieveEmployee(id):
+    employee = EmployeeModel.query.filter_by(employee_id=id).first()
+    if employee:
+        return render_template('data.html', employee=employee)
+    return f"Employee with id ={id} Doenst exist"
 
 
-""" RUNNING APP AND DB CREATION """
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
+@app.route('/data/<int:id>/update', methods=['GET', 'POST'])
+def update(id):
+    employee = EmployeeModel.query.filter_by(employee_id=id).first()
+    if request.method == 'POST':
+        if employee:
+            db.session.delete(employee)
+            db.session.commit()
+            name = request.form['name']
+            age = request.form['age']
+            position = request.form['position']
+            employee = EmployeeModel(
+                employee_id=id, name=name, age=age, position=position)
+            db.session.add(employee)
+            db.session.commit()
+            return redirect(f'/data/{id}')
+        return f"Employee with id = {id} Does nit exist"
+
+    return render_template('update.html', employee=employee)
+
+
+@app.route('/data/<int:id>/delete', methods=['GET', 'POST'])
+def delete(id):
+    employee = EmployeeModel.query.filter_by(employee_id=id).first()
+    if request.method == 'POST':
+        if employee:
+            db.session.delete(employee)
+            db.session.commit()
+            return redirect('/data')
+        abort(404)
+
+    return render_template('delete.html')
+
+
+if __name__ == '__main__':
     app.run(debug=True)
